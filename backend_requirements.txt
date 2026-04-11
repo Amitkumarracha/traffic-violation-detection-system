@@ -1,0 +1,11 @@
+# Detector & Inference Requirements
+# Install with: pip install -r backend_requirements.txt
+
+# Core detector
+onnxruntime>=1.14.0       # ONNX model inference
+opencv-python>=4.6.0      # Image processing, visualization
+numpy>=1.21.0             # Numerical computing
+
+# Optional for enhanced features
+torch>=2.0.0              # For GPU detection
+pyusb>=1.2.1              # For Coral TPU

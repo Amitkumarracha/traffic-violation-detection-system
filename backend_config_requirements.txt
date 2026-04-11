@@ -1,0 +1,11 @@
+# Backend Configuration Requirements
+# Install with: pip install -r backend_config_requirements.txt
+
+# Core dependencies
+pydantic>=2.0.0           # Settings validation and parsing
+pydantic-settings>=2.0.0  # Environment variable loading
+python-dotenv>=1.0.0      # Load .env files
+
+# Optional dependencies for enhanced features
+torch>=2.0.0              # For GPU detection
+pyusb>=1.2.1              # For Coral TPU detection

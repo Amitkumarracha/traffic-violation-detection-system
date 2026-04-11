@@ -1,0 +1,7 @@
+path: model_training/training_dataset_final
+train: images/train
+val:  images/val
+test: images/test
+
+nc: 23
+names: ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe']

@@ -1,0 +1,198 @@
+================================================================================
+                    🔧 GIT CONFIGURATION GUIDE
+================================================================================
+
+CHECK YOUR GIT USERNAME AND EMAIL
+────────────────────────────────────────────────────────────────────────────────
+
+OPTION 1: Run the batch file
+  CHECK_GIT_CONFIG.bat
+
+OPTION 2: Manual commands
+  git config user.name
+  git config user.email
+
+OPTION 3: See all Git settings
+  git config --list
+
+
+================================================================================
+                    SET GIT USERNAME AND EMAIL
+================================================================================
+
+GLOBAL CONFIGURATION (For all repositories):
+────────────────────────────────────────────────────────────────────────────────
+
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+Example:
+  git config --global user.name "Amit Kumar Racha"
+  git config --global user.email "amitkumarracha@example.com"
+
+
+LOCAL CONFIGURATION (For this repository only):
+────────────────────────────────────────────────────────────────────────────────
+
+git config user.name "Your Name"
+git config user.email "your.email@example.com"
+
+
+================================================================================
+                    VERIFY CONFIGURATION
+================================================================================
+
+Check username:
+  git config user.name
+
+Check email:
+  git config user.email
+
+Check all settings:
+  git config --list
+
+Check global settings:
+  git config --global --list
+
+
+================================================================================
+                    COMMON GIT COMMANDS
+================================================================================
+
+CHECK GIT VERSION:
+  git --version
+
+CHECK GIT STATUS:
+  git status
+
+CHECK REMOTE URL:
+  git remote -v
+
+CHECK CURRENT BRANCH:
+  git branch
+
+
+================================================================================
+                    GITHUB AUTHENTICATION
+================================================================================
+
+CHECK GITHUB USERNAME:
+  - Your GitHub username is: Amitkumarracha
+  - Repository: https://github.com/Amitkumarracha/traffic-violation-detection-system
+
+AUTHENTICATE WITH GITHUB:
+  1. Personal Access Token (Recommended)
+     - Go to: GitHub → Settings → Developer settings → Personal access tokens
+     - Generate new token (classic)
+     - Select scopes: repo (all)
+     - Copy token
+     - Use as password when pushing
+
+  2. SSH Key
+     - Generate: ssh-keygen -t ed25519 -C "your.email@example.com"
+     - Add to GitHub: Settings → SSH and GPG keys
+     - Test: ssh -T git@github.com
+
+
+================================================================================
+                    QUICK SETUP COMMANDS
+================================================================================
+
+# 1. Set your name and email
+git config --global user.name "Amit Kumar Racha"
+git config --global user.email "your.email@example.com"
+
+# 2. Verify settings
+git config user.name
+git config user.email
+
+# 3. Initialize repository
+git init
+
+# 4. Add remote
+git remote add origin https://github.com/Amitkumarracha/traffic-violation-detection-system.git
+
+# 5. Check remote
+git remote -v
+
+# 6. Add files
+git add .
+
+# 7. Commit
+git commit -m "Initial commit"
+
+# 8. Push
+git push -u origin main
+
+
+================================================================================
+                    TROUBLESHOOTING
+================================================================================
+
+PROBLEM: Username/email not set
+SOLUTION:
+  git config --global user.name "Your Name"
+  git config --global user.email "your.email@example.com"
+
+PROBLEM: Wrong username/email
+SOLUTION:
+  git config --global user.name "Correct Name"
+  git config --global user.email "correct.email@example.com"
+
+PROBLEM: Authentication failed
+SOLUTION:
+  - Use Personal Access Token instead of password
+  - Or setup SSH key
+
+PROBLEM: Permission denied
+SOLUTION:
+  - Check you have write access to repository
+  - Verify repository URL is correct
+
+
+================================================================================
+                    USEFUL GIT COMMANDS
+================================================================================
+
+# Check configuration
+git config --list
+git config user.name
+git config user.email
+
+# Set configuration
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# Remove configuration
+git config --global --unset user.name
+git config --global --unset user.email
+
+# Edit configuration file
+git config --global --edit
+
+# Check remote
+git remote -v
+git remote show origin
+
+# Check status
+git status
+git log
+git branch
+
+
+================================================================================
+                    NEXT STEPS
+================================================================================
+
+1. Check your Git config:
+   CHECK_GIT_CONFIG.bat
+
+2. Set username and email if needed:
+   git config --global user.name "Your Name"
+   git config --global user.email "your.email@example.com"
+
+3. Push to GitHub:
+   PUSH_NOW.bat
+
+
+================================================================================

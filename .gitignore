@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+tvd_env/
+venv/
+ENV/
+env/
+
+# YOLOv8
+runs/
+*.pt
+*.onnx
+*.engine
+*.tflite
+
+# Training Outputs
+checkpoints/*.pt
+models/checkpoints/*.pt
+models/exports/*.pt
+
+# Logs
+logs/
+*.log
+
+# Exports
+exports/*.pt
+exports/*.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Weights & Biases
+wandb/
+
+# TensorBoard
+events.out.tfevents.*
+
+# Temporary
+*.tmp
+*.bak
+*.cache

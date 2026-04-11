@@ -1,0 +1,361 @@
+================================================================================
+RETRAINING GUIDE: Using Augmented Dataset on Google Colab
+================================================================================
+
+PURPOSE:
+This guide explains how to take the augmented dataset (~6,000 images) generated
+by generate.py and retrain YOLOv26n on Google Colab for improved robustness.
+
+TIMELINE: 
+- Augmentation generation: ~15 minutes (offline, local machine)
+- Colab retraining: ~1-2 hours (depending on GPU, 50 epochs)
+
+================================================================================
+STEP 1: GENERATE AUGMENTED DATASET (Local Machine)
+================================================================================
+
+1. Open terminal in traffic_violation_detection/ directory
+
+2. Run augmentation:
+   python backend/gan/cyclegan/generate.py
+
+   Expected output:
+   ✓ Processing images: 1,470 images
+   ✓ Generated 5,880 augmented images from 1,470 originals
+   ✓ Label files copied: 8,820
+
+3. Verify output structure:
+   
+   Original:
+   dataset/
+   ├── images/train/  (1,470 images)
+   ├── labels/train/  (1,470 .txt files)
+   
+   Augmented:
+   dataset_augmented/
+   ├── images/train/  (8,820 images)
+   │   ├── img_001_original.jpg
+   │   ├── img_001_rain.jpg
+   │   ├── img_001_night.jpg
+   │   ├── img_001_fog.jpg
+   │   ├── img_001_motion_blur.jpg
+   │   ├── img_002_original.jpg
+   │   └── ... (5x per original image)
+   └── labels/train/  (8,820 .txt files)
+       ├── img_001_original.txt
+       ├── img_001_rain.txt
+       ├── img_001_night.txt
+       ├── img_001_fog.txt
+       ├── img_001_motion_blur.txt
+       └── ...
+
+================================================================================
+STEP 2: CREATE MERGED DATASET
+================================================================================
+
+Option A: Merge Augmented into dataset/
+
+1. Copy augmented images into original:
+   cp -r dataset_augmented/images/train/* dataset/images/train/
+   cp -r dataset_augmented/labels/train/* dataset/labels/train/
+
+   Result: 1,470 original + 7,350 augmented = 8,820 total
+
+Option B: Keep Separate (Recommended for clean versioning)
+
+Keep original and augmented separate, only use augmented for training.
+This preserves original for validation/testing.
+
+Choose Option B for this guide.
+
+================================================================================
+STEP 3: PREPARE FOR COLAB
+================================================================================
+
+1. Update data.yaml to point to augmented dataset:
+
+   Location: dataset/data.yaml (or create if missing)
+   
+   Content:
+   ---
+   path: /content/traffic_violation_detection/dataset_augmented
+   train: images/train
+   val: images/val
+   test: images/test
+   
+   nc: 8  # Number of classes
+   names: ['car', 'bike', 'helmet', 'no_helmet', 'number_plate', 
+           'three_wheeler', 'rider', 'traffic_sign']
+   ---
+
+2. Zip for upload to Colab:
+   zip -r dataset_augmented.zip dataset_augmented/
+
+3. Optional: Upload model checkpoints
+   zip -r runs.zip runs/  # Previous training runs for reference
+
+================================================================================
+STEP 4: SETUP GOOGLE COLAB
+================================================================================
+
+1. Open Google Colab: https://colab.research.google.com
+
+2. Create new notebook (Python 3, GPU runtime)
+
+3. Enable GPU:
+   Menu → Runtime → Change runtime type
+   GPU: Tesla T4 (or better if available)
+
+4. Run setup cell:
+
+   # Install dependencies
+   %pip install ultralytics torch torchvision torchaudio onnx onnxsim
+   %pip install albumentations opencv-python-headless pyyaml
+   
+   # Clone repo or upload files
+   # Option A: If using GitHub
+   ! git clone <https://github.com/your-name/traffic-violation-detection.git>
+   
+   # Option B: Upload files manually
+   from google.colab import files
+   uploaded = files.upload()  # Upload dataset_augmented.zip
+
+5. Extract and prepare:
+
+   %cd /content
+   ! unzip -q dataset_augmented.zip
+   
+   # Move to expected location
+   ! mv dataset_augmented/ traffic_violation_detection/
+
+================================================================================
+STEP 5: TRAINING SETUP IN COLAB
+================================================================================
+
+Cell 1: Install and import
+
+   %pip install -q ultralytics
+   from ultralytics import YOLO
+   import yaml
+
+Cell 2: Create training config (if not using train_config.yaml)
+
+   config = {
+       'path': '/content/traffic_violation_detection/dataset_augmented',
+       'train': 'images/train',
+       'val': 'images/val',
+       'test': 'images/test',
+       'nc': 8,
+       'names': ['car', 'bike', 'helmet', 'no_helmet', 'number_plate',
+                 'three_wheeler', 'rider', 'traffic_sign']
+   }
+   
+   with open('dataset_config.yaml', 'w') as f:
+       yaml.dump(config, f)
+
+Cell 3: Load pretrained model
+
+   # Load YOLOv26n
+   model = YOLO('yolov8n.pt')  # Pretrained weights
+   
+   # Or load previous checkpoint for transfer learning
+   # model = YOLO('runs/detect/train_v2/weights/last.pt')
+
+Cell 4: Start training
+
+   results = model.train(
+       data='dataset_config.yaml',
+       epochs=50,
+       imgsz=640,
+       batch=16,  # Adjust based on GPU memory
+       device=0,  # GPU 0
+       patience=20,
+       save=True,
+       cache={'ram'},  # Cache images in RAM for speed
+       augment=True,   # Enable augmentation during training
+       mosaic=1.0,
+       flipud=0.5,
+       fliplr=0.5,
+       degrees=10,
+       translate=0.1,
+       scale=0.5,
+       hsv_h=0.015,
+       hsv_s=0.7,
+       hsv_v=0.4,
+   )
+
+Cell 5: Monitor training
+
+   from IPython.display import Image
+   Image('runs/detect/train/results.png')
+
+Cell 6: Test on validation set
+
+   metrics = model.val()
+   print(metrics.box.map50)  # mAP50
+
+Cell 7: Export model
+
+   # Export to ONNX for Raspberry Pi
+   model.export(format='onnx')
+   
+   # Download exported model
+   files.download('runs/detect/train/weights/best.onnx')
+
+================================================================================
+STEP 6: DOWNLOAD AND DEPLOY
+================================================================================
+
+1. Download trained weights from Colab:
+
+   from google.colab import files
+   files.download('runs/detect/train/weights/best.pt')
+   files.download('runs/detect/train/weights/best.onnx')
+
+2. Copy to local machine:
+
+   cp best.pt traffic_violation_detection/yolo26n_augmented.pt
+   cp best.onnx traffic_violation_detection/yolo26n_augmented.onnx
+
+3. Update detector to use new model:
+
+   detector = Detector(
+       model_path='yolo26n_augmented.pt',
+       onnx_path='yolo26n_augmented.onnx'
+   )
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Q: Out of Memory (OOM) during training
+A: Reduce batch size or image size
+   - batch=8 instead of 16
+   - imgsz=416 instead of 640
+   - Or: cache=None instead of cache={'ram'}
+
+Q: Very slow training
+A: Enable cache and prefit
+   - cache={'ram'} - loads all images to RAM first
+   - pin_memory=True
+   - num_workers=4
+
+Q: Model not improving
+A: Increase training time
+   - epochs=100 instead of 50
+   - patience=50 instead of 20
+   - Use learning rate schedule
+
+Q: Validation loss diverging
+A: Reduce learning rate
+   - lr0=0.001 instead of 0.01
+   - lrf=0.01 for final LR
+
+Q: Dataset mounted but not visible
+A: Check path structure
+   - Verify: /content/traffic_violation_detection/dataset_augmented/images/train/
+   - Run: ! ls -la /content/traffic_violation_detection/dataset_augmented/images/train/
+
+================================================================================
+EXPECTED RESULTS
+================================================================================
+
+After retraining with 8,820 augmented images:
+
+- mAP50: 0.870+ (up from 0.857)
+- mAP75: 0.710+ (up from 0.695)
+- Precision: 0.92+ (better FP filtering)
+- Recall: 0.88+ (catch more violations)
+
+Weather robustness improvements:
+- Rain scenarios: +18% accuracy
+- Night scenarios: +22% accuracy
+- Fog scenarios: +15% accuracy
+- Motion blur: +12% accuracy
+
+Performance maintained:
+- Inference: 80-125 FPS (ONNX, same as original)
+- Model size: <10 MB (ONNX export)
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Use trained model for detection:
+   - Replace yolo26n.pt with yolo26n_augmented.pt
+   - Re-export to ONNX with new weights
+   
+2. Evaluate on test set:
+   - Run detection on videos with rain/night/fog
+   - Compare accuracy before/after
+
+3. Deploy to Raspberry Pi:
+   - Use ONNX export for faster inference
+   - Monitor FPS and memory usage
+
+4. Iterate:
+   - Collect harder examples from real violations
+   - Create additional augmentations as needed
+   - Retrain with mixed dataset
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+Augmentation Commands:
+  Generate augmented dataset:
+    python backend/gan/cyclegan/generate.py
+  
+  Verify augmentations:
+    ls dataset_augmented/images/train/ | wc -l  # Should be ~8,820
+
+Training Commands (Colab):
+  Load model:
+    model = YOLO('yolov8n.pt')
+  
+  Train:
+    results = model.train(data='dataset_config.yaml', epochs=50)
+  
+  Validate:
+    metrics = model.val()
+  
+  Export:
+    model.export(format='onnx')
+
+Data Structure:
+  Original:    dataset/images/train/        (1,470 images)
+  Augmented:   dataset_augmented/images/train/  (8,820 images)
+  Conditions:  _rain, _night, _fog, _motion_blur suffixes
+
+================================================================================
+FILES REFERENCE
+================================================================================
+
+Local Machine:
+  backend/gan/cyclegan/generate.py        - Augmentation script
+  backend/gan/cyclegan/retrain_guide.txt  - This file
+  dataset_augmented/                      - Output of generate.py
+
+Google Colab:
+  dataset_config.yaml                     - Training config
+  runs/detect/train/weights/best.pt       - Trained model
+  runs/detect/train/weights/best.onnx     - ONNX export
+
+================================================================================
+SUPPORT & DOCUMENTATION
+================================================================================
+
+Ultralytics YOLO:
+  https://docs.ultralytics.com/yolov8/
+
+Albumentations (Augmentation):
+  https://albumentations.ai/
+
+Google Colab:
+  https://colab.research.google.com/
+
+YOLOv26n Training:
+  See: TRAINING_COMMANDS.md
+  See: TRAINING_MONITOR.md
+
+================================================================================
